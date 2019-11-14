@@ -86,14 +86,52 @@ void FXOS8700CQ::init() {
 
     second_config = readReg(FXOS8700CQ_M_CTRL_REG1);
     second_config &= 0xE0;
-    second_config |= (magOSR << 2) | 0x01;
+    second_config |= (magOSR << 2) | 0x1;
     
     writeReg(FXOS8700CQ_M_CTRL_REG1, second_config);
-
-    spi_write_cmd(FXOS8700CQ_CTRL_REG2, 0x00);
     active();
+
+    //I guess calibrateMagnetometer call should go here at end of init
 }
 
+//------------------------------------------------------------------------------
+// Interrupt functions for Lab 4 - Enabling Interrupts
+//------------------------------------------------------------------------------
+
+void beginInterrupt(void) {
+  
+}
+
+void endInterrupt(void) {
+  
+}
+
+
+// Need to call readMagData() within this function 
+// and then calculate a running average
+void FXOS8700CQ::calibrateMag(void) {
+  uint16_t x, y, z;
+  uint16_t avgX, avgY, avgZ;
+
+  SerialUSB.println("Magnetometer is being calibrated...");
+
+  for (int i = 0; i < 10; i++) {
+    
+    readMagData(); // Should be able to call magData.x after this
+    x += magData.x
+    y += magData.y
+    z += magData.z
+  }
+
+  avgX = x / 10; 
+  avgY = y / 10; 
+  avgZ = z / 10;
+
+  // What happens next? Subtract this calibration from all future readings
+  // In readMagData()?
+
+  SerialUSB.println("Magnetometer calibration complete!");
+}
 //------------------------------------------------------------------------------
 // checkWhoAmI(): Check the whoAmI register
 //------------------------------------------------------------------------------
