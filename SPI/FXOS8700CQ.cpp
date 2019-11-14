@@ -42,11 +42,11 @@ void FXOS8700CQ::readMagData() {
 
   msb = readReg(FXOS8700CQ_M_OUT_Y_MSB);
   lsb = readReg(FXOS8700CQ_M_OUT_Y_LSB);
-  magData.y = (msb << 8) |  LSB_data ;
+  magData.y = (msb << 8) | lsb;
   
   msb = readReg(FXOS8700CQ_M_OUT_Z_MSB);
   lsb = readReg(FXOS8700CQ_M_OUT_Z_LSB);
-  magData.z = (msb << 8) | lsb); 
+  magData.z = (msb << 8) | lsb; 
 }
 //------------------------------------------------------------------------------
 // standby(): Put the FXOS8700CQ into standby mode for writing to registers
@@ -98,18 +98,18 @@ void FXOS8700CQ::init() {
 // Interrupt functions for Lab 4 - Enabling Interrupts
 //------------------------------------------------------------------------------
 
-void beginInterrupt(void) {
+void beginInterrupt() {
   
 }
 
-void endInterrupt(void) {
+void endInterrupt() {
   
 }
 
 
 // Need to call readMagData() within this function 
 // and then calculate a running average
-void FXOS8700CQ::calibrateMag(void) {
+void FXOS8700CQ::calibrateMag() {
   uint16_t x, y, z;
   uint16_t avgX, avgY, avgZ;
 
@@ -118,9 +118,9 @@ void FXOS8700CQ::calibrateMag(void) {
   for (int i = 0; i < 10; i++) {
     
     readMagData(); // Should be able to call magData.x after this
-    x += magData.x
-    y += magData.y
-    z += magData.z
+    x += magData.x;
+    y += magData.y;
+    z += magData.z;
   }
 
   avgX = x / 10; 

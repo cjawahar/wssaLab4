@@ -25,7 +25,7 @@ void spi_write_cmd(uint8_t address, uint8_t tx_data) {
   address = (0x7F & address) | (0x01 << 7);
   digitalWrite(CS_PIN, LOW);
   SPI.transfer(address);
-  SPI.transfer(address_bit7);
+  SPI.transfer(addressBit7);
   SPI.transfer(tx_data);
   digitalWrite(CS_PIN, HIGH);
   

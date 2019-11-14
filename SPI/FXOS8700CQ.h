@@ -200,6 +200,13 @@ class FXOS8700CQ {
 
 				// Miscellaneous Functions
 				void checkWhoAmI(void);   // Read the Who Am I register
+
+       //Interrupt functions
+       void beginInterrupt(void);
+       void endInterrupt(void);
+
+       //Magnetometer calibration
+       void calibrateMag(void);
 };
 
 #endif
