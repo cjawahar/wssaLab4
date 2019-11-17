@@ -18,7 +18,7 @@ void spi_write_cmd(uint8_t address, uint8_t tx_data) {
 
   SerialUSB.println("SPI Write starting here!");
 
-  //SPI.beginTransaction(SPISettings(SPI_HZ, SPI_ORDER, SPI_MODE));
+  SPI.beginTransaction(SPISettings(SPI_HZ, SPI_ORDER, SPI_MODE));
 #if SPI_TRANSFER_MODE == FXOS8700_SPI_TRANSFER_MODE
 
   uint8_t addressBit7 = address & (0x1 << 7);

@@ -1,9 +1,73 @@
 #include <SPI.h>
 #include "FXOS8700CQ.h"
+#include <FreeRTOS_ARM.h>
 
 FXOS8700CQ sensor;
 
+float magX, magY, magZ;
+int Count;
+QueueHandle_t xQueue;
+SemaphoreHandle_t sem_r, sem_w; // Read/Write semaphores
+portBASE_TYPE s1, s2;
+
+//function to read mag values
+static void ReadValues(void* arg) {
+  
+  while(1) {
+    xSemaphoreTake(sem_r, portMAX_DELAY);
+
+    sensor.readMagData();
+    xSemaphoreGive(sem_w);  //Same process with sem's as prev labs.
+  }
+}
+
+// Print out mag values -- previously was in loop()
+static void PrintMagValues() {
+
+  magX = sensor.magData.x;
+  magY = sensor.magData.y;
+  magZ = sensor.magData.z;
+
+  SerialUSB.println("Magnetometer X: ");
+  SerialUSB.println(magX, 4);
+  SerialUSB.println("Magnetometer Y: ");
+  SerialUSB.println(magY, 4);
+  SerialUSB.println("Magnetometer Z: ");
+  SerialUSB.println(magZ, 4);
+}
+
+// Collect Data function
+static void CollectData(void *arg) {
+
+  while(1) {
+
+    sensor.readMagData();
+    magX = sensor.magData.x;
+    magY = sensor.magData.y;
+    magZ = sensor.magData.z;
+
+    SerialUSB.println("Magnetometer X: ");
+    SerialUSB.println(magX, 4);
+    SerialUSB.println("Magnetometer Y: ");
+    SerialUSB.println(magY, 4);
+    SerialUSB.println("Magnetometer Z: ");
+    SerialUSB.println(magZ, 4);
+  }
+}
+
+// Process Data function -- simple call to print out the #
+// Explicit in writeup -- could have added to CollectData?
+void ProcessData() {
+
+  Count++;
+  SerialUSB.println("Processed Data Count:  ");
+  SerialUSB.println(Count);
+}
+
 void setup() {
+
+  int maxCount = 10000;
+  
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
   pinMode(8, OUTPUT);
@@ -36,6 +100,5 @@ void loop() {
   SerialUSB.println(sensor.magData.z);
 
   SerialUSB.println("");
-  sensor.checkWhoAmI();
   delay(2000);
 }
