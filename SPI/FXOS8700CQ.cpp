@@ -38,15 +38,18 @@ void FXOS8700CQ::readMagData() {
 
   msb = readReg(FXOS8700CQ_M_OUT_X_MSB);
   lsb = readReg(FXOS8700CQ_M_OUT_X_LSB);
-  magData.x = (msb << 8) | lsb;
+  //magData.x = (msb << 8) | lsb; -- Wrong order? need to test
+  magData.x = lsb | (msb << 8);
 
   msb = readReg(FXOS8700CQ_M_OUT_Y_MSB);
   lsb = readReg(FXOS8700CQ_M_OUT_Y_LSB);
-  magData.y = (msb << 8) | lsb;
+  //magData.y = (msb << 8) | lsb;
+  magData.y = lsb | (msb << 8);
   
   msb = readReg(FXOS8700CQ_M_OUT_Z_MSB);
   lsb = readReg(FXOS8700CQ_M_OUT_Z_LSB);
-  magData.z = (msb << 8) | lsb; 
+  //magData.z = (msb << 8) | lsb; 
+  magData.z = lsb | (msb << 8);
 }
 //------------------------------------------------------------------------------
 // standby(): Put the FXOS8700CQ into standby mode for writing to registers
@@ -90,8 +93,6 @@ void FXOS8700CQ::init() {
     
     writeReg(FXOS8700CQ_M_CTRL_REG1, second_config);
     active();
-
-    //I guess calibrateMagnetometer call should go here at end of init
 }
 
 //------------------------------------------------------------------------------

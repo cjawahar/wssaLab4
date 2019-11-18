@@ -30,6 +30,7 @@ void spi_write_cmd(uint8_t address, uint8_t tx_data) {
   digitalWrite(CS_PIN, HIGH);
   
 #else   
+  // In case if statement is not correct. Regular transfer.
   SPI.transfer(address);
   SPI.transfer(tx_data);
 
