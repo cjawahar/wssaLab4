@@ -4,7 +4,7 @@
 
 FXOS8700CQ sensor;
 
-float magX, magY, magZ;
+uint32_t magX, magY, magZ;
 uint32_t dataCount, loopCount;
 
 SemaphoreHandle_t sem;
@@ -14,6 +14,7 @@ TaskHandle_t handleCollec, handleProcess;
 static void CollectData(void *arg) {
 
   while(1) {
+    SerialUSB.println("Data Collection started.");
 
     xSemaphoreTake(sem, portMAX_DELAY);
     sensor.resetInterrupt();
@@ -53,10 +54,6 @@ void ISR() {
 
 void setup() {
   portBASE_TYPE s1, s2;
-
-  int maxCount = 10000;
-  uint16_t mean[3], std_dev[3], magThreshold[3];
-  float coeff = 2.0;
   
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
@@ -79,9 +76,10 @@ void setup() {
 
   sensor.checkWhoAmI();
 
-  SerialUSB.println("Enabling interrupts for lab");
+  SerialUSB.println("Enabling interrupts/calibration for lab");
   sensor.calibrateMag();
   sensor.beginInterrupt();
+  sensor.enableMagInterrupt();
 
   SerialUSB.println("Beginning FreeRTOS setup");
   sem = xSemaphoreCreateCounting(1, 1);
@@ -94,35 +92,36 @@ void setup() {
   attachInterrupt(INT_PIN, ISR, FALLING);
   SerialUSB.println("Interrupt pin should be attached!");
 
+  vTaskSuspend(handleProcessData);
   vTaskStartScheduler();
   SerialUSB.println("End of Setup");
 }
 
-// Print out mag values -- previously was in loop()
-static void PrintMagValues() {
-
-  magX = sensor.magData.x;
-  magY = sensor.magData.y;
-  magZ = sensor.magData.z;
-
-  SerialUSB.println("Magnetometer X: ");
-  SerialUSB.println(magX, 4);
-  SerialUSB.println("Magnetometer Y: ");
-  SerialUSB.println(magY, 4);
-  SerialUSB.println("Magnetometer Z: ");
-  SerialUSB.println(magZ, 4);
-}
-
-//function to read mag values
-static void ReadValues(void* arg) {
-  
-  while(1) {
-    xSemaphoreTake(sem, portMAX_DELAY);
-
-    sensor.readMagData();
-    xSemaphoreGive(sem_w);  //Same process with sem's as prev labs.
-  }
-}
+//// Print out mag values -- previously was in loop()
+//static void PrintMagValues() {
+//
+//  magX = sensor.magData.x;
+//  magY = sensor.magData.y;
+//  magZ = sensor.magData.z;
+//
+//  SerialUSB.println("Magnetometer X: ");
+//  SerialUSB.println(magX, 4);
+//  SerialUSB.println("Magnetometer Y: ");
+//  SerialUSB.println(magY, 4);
+//  SerialUSB.println("Magnetometer Z: ");
+//  SerialUSB.println(magZ, 4);
+//}
+//
+////function to read mag values
+//static void ReadValues(void* arg) {
+//  
+//  while(1) {
+//    xSemaphoreTake(sem, portMAX_DELAY);
+//
+//    sensor.readMagData();
+//    xSemaphoreGive(sem_w);  //Same process with sem's as prev labs.
+//  }
+//}
 
 void loop() {
   

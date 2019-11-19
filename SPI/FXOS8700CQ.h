@@ -206,6 +206,7 @@ class FXOS8700CQ {
        //Interrupt functions
        void beginInterrupt(void);
        void endInterrupt(void);
+       void resetInterrupt(void);
 
        //Magnetometer calibration
        void calibrateMag(void);
