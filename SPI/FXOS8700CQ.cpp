@@ -109,14 +109,26 @@ void FXOS8700CQ::beginInterrupt() {
 
   writeReg(FXOS8700CQ_M_VECM_CFG, 0x70);
 
-  
+  // Update MSB and LSB registers
+  writeReg(FXOS8700CQ_M_VECM_INITX_MSB, calData.avgX >> 8);
+  writeReg(FXOS8700CQ_M_VECM_INITX_LSB, calData.avgX & 0xFF);
+  writeReg(FXOS8700CQ_M_VECM_INITY_MSB, calData.avgY >> 8);
+  writeReg(FXOS8700CQ_M_VECM_INITY_LSB, calData.avgY & 0xFF);
+  writeReg(FXOS8700CQ_M_VECM_INITZ_MSB, calData.avgZ >> 8);
+  writeReg(FXOS8700CQ_M_VECM_INITZ_LSB, calData.avgZ & 0xFF);
+
+  // Next, set interrupt values in magnitude registers.
+  writeReg(FXOS8700CQ_M_VECM_CFG, 0x7F);
+  writeReg(FXOS8700CQ_M_VECM_THS_MSB, thresholds.Upper);
+  writeReg(FXOS8700CQ_M_VECM_THS_LSB, thresholds.Lower);
+  writeReg(FXOS8700CQ_M_VECM_CNT, DEBOUNCE_COUNT); // Debounce set to 25, given.
 }
 
 void FXOS8700CQ::endInterrupt() {
   
   standby();
   int8_t register_config = readReg(FXOS8700CQ_M_VECM_CFG);
-  writeReg(FXOS8700CQ_M_VECM_CFG, config & ~0x02);
+  writeReg(FXOS8700CQ_M_VECM_CFG, register_config & ~0x02);
   resetInterrupt();
   active();
 }
@@ -125,8 +137,21 @@ void FXOS8700CQ::resetInterrupt(void) {
   readReg(FXOS8700CQ_M_INT_SRC);
 }
 
-// Need to call readMagData() within this function 
-// and then calculate a running average
+void FXOS8700CQ::calc_ISR_Threshold(void) {
+  int32_t avg_stdev, avg_Mag;
+
+  avg_Mag = sqrt(pow(calData.avgX, 2) + pow(calData.avgY, 2) + pow(calData.avgZ, 2));
+  avg_stdev = sqrt(pow(calData.stdX, 2) + pow(calData.stdY, 2) + pow(calData.stdZ, 2));
+
+  int16_t threshold = (int16_t) 4*avg_stdev;
+
+  thresholds.Lower = threshold & 0xFF;
+  thresholds.Upper = threshold >> 8;
+}
+
+
+// Need to call readMagData() within this function and then calculate a running average
+
 void FXOS8700CQ::calibrateMag() {
   //Using 32 bits here -- readMagData is 16, need to cast.
   uint32_t x, y, z;
@@ -160,6 +185,9 @@ void FXOS8700CQ::calibrateMag() {
   avgZ = z / i;
   calData.avgZ = (int16_t) avgZ;
   calData.stdZ = (int16_t) sqrt(secMomentZ/i - avgZ*avgZ);
+
+  // Now that calData is populated -- actually calculate the ISR threshold
+  calc_ISR_Threshold();
   
   SerialUSB.println("Magnetometer calibration complete!");
 }

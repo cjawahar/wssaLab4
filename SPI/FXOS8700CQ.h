@@ -181,6 +181,8 @@ class FXOS8700CQ {
 				// Sensor data
 				SRAWDATA magData; 				// RAW magnometer sensor data
 				uint8_t whoAmIData; 			// Who Am I data
+        CALDATA calData;
+        THRESHOLDS thresholds;
 
 				// Sensor configuration
 				uint8_t magODR;						// Magnetometer data sampling rate
@@ -207,6 +209,7 @@ class FXOS8700CQ {
        void beginInterrupt(void);
        void endInterrupt(void);
        void resetInterrupt(void);
+       void calc_ISR_Threshold(void);
 
        //Magnetometer calibration
        void calibrateMag(void);
