@@ -120,6 +120,8 @@ void FXOS8700CQ::beginInterrupt() {
   // Next, set interrupt values in magnitude registers.
   writeReg(FXOS8700CQ_M_VECM_CFG, 0x7F);
   writeReg(FXOS8700CQ_M_VECM_THS_MSB, thresholds.Upper);
+  Serial.println("thresholds U: " + thresholds.Upper);
+  Serial.println("thresholds L: " + thresholds.Lower);
   writeReg(FXOS8700CQ_M_VECM_THS_LSB, thresholds.Lower);
   writeReg(FXOS8700CQ_M_VECM_CNT, DEBOUNCE_COUNT); // Debounce set to 25, given.
 }
@@ -156,11 +158,13 @@ void FXOS8700CQ::calibrateMag() {
   //Using 32 bits here -- readMagData is 16, need to cast.
   uint32_t x, y, z;
   uint32_t avgX, avgY, avgZ;
-  uint32_t Xsquare, Ysquare, Zsquare;
+  uint32_t xSquare, ySquare, zSquare;
 
   SerialUSB.println("Magnetometer is being calibrated...");
 
-  for (int i = 0; i < 10; i++) {
+  int i = 0;
+
+  for (; i < 10; i++) {
     
     readMagData(); // Should be able to call magData.x after this
     x += (int32_t) magData.x;
@@ -176,15 +180,15 @@ void FXOS8700CQ::calibrateMag() {
   //Average calculations
   avgX = x / i;
   calData.avgX = (int16_t) avgX; 
-  calData.stdX = (int16_t) sqrt(secMomentX/i - avgX*avgX);
+  calData.stdX = (int16_t) sqrt(xSquare/i - avgX*avgX);
 
   avgY = y / i;
   calData.avgY = (int16_t) avgY;
-  calData.stdY = (int16_t) sqrt(secMomentY/i - avgY*avgY);
+  calData.stdY = (int16_t) sqrt(ySquare/i - avgY*avgY);
 
   avgZ = z / i;
   calData.avgZ = (int16_t) avgZ;
-  calData.stdZ = (int16_t) sqrt(secMomentZ/i - avgZ*avgZ);
+  calData.stdZ = (int16_t) sqrt(zSquare/i - avgZ*avgZ);
 
   // Now that calData is populated -- actually calculate the ISR threshold
   calc_ISR_Threshold();
