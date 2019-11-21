@@ -15,20 +15,23 @@
 // spi_write_cmd(): Transmit to a SPI device
 //------------------------------------------------------------------------------
 void spi_write_cmd(uint8_t address, uint8_t tx_data) {
+#ifdef SPI_DEBUG
+  SerialUSB.println("Write over SPI");
+#endif 
+  digitalWrite(CS_PIN, LOW); //chip select low active
+  delay(1); //give some time for slave to intialize
+  SPI.beginTransaction(SPISettings(SPI_HZ, SPI_ORDER, SPI_MODE)); //configure parameters
 
-  //SerialUSB.println("SPI Write starting here!");
+  SPI.transfer(0x80 | (0x7f & address)); //RW bit and lower 7 bits of address
+  SPI.transfer(address); //highest bit of address; remaining  bits are don't cares
+  SPI.transfer(tx_data); // transfer the data itself 
 
-  SPI.beginTransaction(SPISettings(SPI_HZ, SPI_ORDER, SPI_MODE));
-#if SPI_TRANSFER_MODE == FXOS8700_SPI_TRANSFER_MODE
-
-  SPI.transfer(0x80 | (0x7f & address));
-  SPI.transfer(address);
-  SPI.transfer(tx_data);
-  
-  digitalWrite(CS_PIN, HIGH);
+  digitalWrite(CS_PIN, HIGH); //release chip select
   SPI.endTransaction();
 
-  //SerialUSB.println("SPI Write finished!");
+#ifdef SPI_DEBUG
+  SerialUSB.println("Finish write over SPI");
+#endif 
 }
 
 //------------------------------------------------------------------------------
@@ -38,25 +41,28 @@ uint8_t spi_read_cmd(uint8_t address) {
   // Pg 17 of dataSheet   
   // Read takes 8 bit data from address
   
-  uint8_t incoming_data;
+ #ifdef SPI_DEBUG
+  SerialUSB.println("Read over SPI");
+#endif 
 
-  //SerialUSB.println("SPI Read starting here!");
+  uint8_t rx_data;
 
   digitalWrite(CS_PIN, LOW);
-  delay(10);
-
+  delay(1);
   SPI.beginTransaction(SPISettings(SPI_HZ, SPI_ORDER, SPI_MODE));
-
-  SPI.transfer(0X7F & address);
-  SPI.transfer(address);
-  incoming_data = SPI.transfer(0);
   
-  digitalWrite(CS_PIN, HIGH);
+  SPI.transfer(0x7f & address);
+  SPI.transfer(address);
+  rx_data = SPI.transfer(0);
+
+  digitalWrite(CS_PIN, HIGH); //release chip select
   SPI.endTransaction();
 
-  //SerialUSB.println("SPI Read finished!");
+#ifdef SPI_DEBUG
+  SerialUSB.println("Finish read over SPI");
+#endif 
 
-  return incoming_data;
+  return rx_data;
 }
 
 //*****************************************************************************

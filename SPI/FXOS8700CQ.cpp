@@ -34,24 +34,17 @@ uint8_t FXOS8700CQ::readReg(uint8_t reg) {
 // readMagData(): Read the magnometer X, Y and Z axisdata
 //------------------------------------------------------------------------------
 void FXOS8700CQ::readMagData() {
-  int16_t msb, lsb;
-
-  msb = readReg(FXOS8700CQ_M_OUT_X_MSB);
-  lsb = readReg(FXOS8700CQ_M_OUT_X_LSB);
-  //magData.x = (msb << 8) | lsb; -- Wrong order? need to test
-  magData.x = lsb | (msb << 8);
+  
+  magData.x = readReg(FXOS8700CQ_M_OUT_X_LSB);
+  magData.x |= readReg(FXOS8700CQ_M_OUT_X_MSB) << 8;
   magData.x -= calData.avgX;
 
-  msb = readReg(FXOS8700CQ_M_OUT_Y_MSB);
-  lsb = readReg(FXOS8700CQ_M_OUT_Y_LSB);
-  //magData.y = (msb << 8) | lsb;
-  magData.y = lsb | (msb << 8);
+  magData.y = readReg(FXOS8700CQ_M_OUT_Y_LSB);
+  magData.y |= readReg(FXOS8700CQ_M_OUT_Y_MSB) << 8;
   magData.y -= calData.avgY;
   
-  msb = readReg(FXOS8700CQ_M_OUT_Z_MSB);
-  lsb = readReg(FXOS8700CQ_M_OUT_Z_LSB);
-  //magData.z = (msb << 8) | lsb; 
-  magData.z = lsb | (msb << 8);
+  magData.z = readReg(FXOS8700CQ_M_OUT_Z_LSB);
+  magData.z |= readReg(FXOS8700CQ_M_OUT_Z_MSB) << 8;
   magData.z -= calData.avgZ;
 }
 //------------------------------------------------------------------------------
@@ -107,6 +100,8 @@ void FXOS8700CQ::beginInterrupt() {
   standby();
   resetInterrupt();
 
+  SerialUSB.println("beginInterrupt");
+
   writeReg(FXOS8700CQ_M_VECM_CFG, 0x70);
 
   // Update MSB and LSB registers
@@ -120,15 +115,18 @@ void FXOS8700CQ::beginInterrupt() {
   // Next, set interrupt values in magnitude registers.
   writeReg(FXOS8700CQ_M_VECM_CFG, 0x7F);
   writeReg(FXOS8700CQ_M_VECM_THS_MSB, thresholds.Upper);
-  Serial.println("thresholds U: " + thresholds.Upper);
-  Serial.println("thresholds L: " + thresholds.Lower);
+  //SerialUSB.println("thresholds U: " + thresholds.Upper);
+  //SerialUSB.println("thresholds L: " + thresholds.Lower);
   writeReg(FXOS8700CQ_M_VECM_THS_LSB, thresholds.Lower);
   writeReg(FXOS8700CQ_M_VECM_CNT, DEBOUNCE_COUNT); // Debounce set to 25, given.
+
+  active();
 }
 
 void FXOS8700CQ::endInterrupt() {
   
   standby();
+  
   int8_t register_config = readReg(FXOS8700CQ_M_VECM_CFG);
   writeReg(FXOS8700CQ_M_VECM_CFG, register_config & ~0x02);
   resetInterrupt();
@@ -156,39 +154,48 @@ void FXOS8700CQ::calc_ISR_Threshold(void) {
 
 void FXOS8700CQ::calibrateMag() {
   //Using 32 bits here -- readMagData is 16, need to cast.
-  uint32_t x, y, z;
+  uint32_t x=0, y=0, z=0;
   uint32_t avgX, avgY, avgZ;
   uint32_t xSquare, ySquare, zSquare;
 
   SerialUSB.println("Magnetometer is being calibrated...");
 
-  int i = 0;
-
-  for (; i < 10; i++) {
-    
+  int i = 0, calNum = 20;
+  
+  //collect data for some time, calculate the average
+  while(i++ < calNum) {
     readMagData(); // Should be able to call magData.x after this
     x += (int32_t) magData.x;
-    xSquare += (magData.x)^2;
+    xSquare += magData.x * magData.x;
      
     y += (int32_t) magData.y;
-    ySquare += (magData.y)^2;
+    ySquare += magData.y * magData.y;
      
     z += (int32_t) magData.z;
-    zSquare += (magData.z)^2;
+    zSquare += magData.z * magData.z;
+    delay(10);
   }
 
   //Average calculations
-  avgX = x / i;
+  avgX = (x / i);
   calData.avgX = (int16_t) avgX; 
   calData.stdX = (int16_t) sqrt(xSquare/i - avgX*avgX);
 
-  avgY = y / i;
+  avgY = (y / i);
   calData.avgY = (int16_t) avgY;
   calData.stdY = (int16_t) sqrt(ySquare/i - avgY*avgY);
 
-  avgZ = z / i;
+  avgZ = (z / i);
   calData.avgZ = (int16_t) avgZ;
   calData.stdZ = (int16_t) sqrt(zSquare/i - avgZ*avgZ);
+
+  SerialUSB.println("calData");
+  SerialUSB.println(calData.avgX);
+  SerialUSB.println(calData.stdX);
+  SerialUSB.println(calData.avgY);
+  SerialUSB.println(calData.stdY);
+  SerialUSB.println(calData.avgZ);
+  SerialUSB.println(calData.stdZ);
 
   // Now that calData is populated -- actually calculate the ISR threshold
   calc_ISR_Threshold();

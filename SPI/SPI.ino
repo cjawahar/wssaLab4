@@ -4,8 +4,9 @@
 
 FXOS8700CQ sensor;
 
+#define INT_PIN 51
 uint32_t magX, magY, magZ;
-uint32_t dataCount, loopCount;
+uint32_t dataCount;
 
 SemaphoreHandle_t sem;
 TaskHandle_t handleCollec, handleProcess;
@@ -24,11 +25,13 @@ static void CollectData(void *arg) {
     magZ = sensor.magData.z;
 
     SerialUSB.println("Magnetometer X: ");
-    SerialUSB.println(magX, 4);
+    SerialUSB.println(magX);
     SerialUSB.println("Magnetometer Y: ");
-    SerialUSB.println(magY, 4);
+    SerialUSB.println(magY);
     SerialUSB.println("Magnetometer Z: ");
-    SerialUSB.println(magZ, 4);
+    SerialUSB.println(magZ);
+
+    SerialUSB.println("");
 
     vTaskResume(handleProcess);
   }
@@ -37,10 +40,12 @@ static void CollectData(void *arg) {
 // Process Data function -- simple call to print out the #
 // Explicit in writeup -- could have added to CollectData?
 void ProcessData(void* arg) {
-  
-  SerialUSB.println("Processed Data Count:  ");
-  dataCount++;
-  SerialUSB.println(dataCount);
+  while(1) {
+    SerialUSB.println("Processed Data Count:  ");
+    dataCount++;
+    SerialUSB.println(dataCount);
+    vTaskSuspend(handleProcess); 
+  }
 }
 
 // Need an Interrupt Service Routine next
@@ -90,6 +95,7 @@ void setup() {
   pinMode(INT_PIN, INPUT); // Interrupt pin
   attachInterrupt(INT_PIN, ISR_thread, FALLING);
   SerialUSB.println("Interrupt pin should be attached!");
+  xSemaphoreTake(sem, portMAX_DELAY);
 
   vTaskSuspend(handleProcess);
   vTaskStartScheduler();

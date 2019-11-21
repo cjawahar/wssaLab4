@@ -1,4 +1,4 @@
-x//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // FXOS8700CQ Driver Header File
 // Original Author: Matt Warner <mlw2224@rit.edu>
 // The FXOS8700CQ is an accelerometer I2C/SPI sensor which is 3.3V tolerant.
@@ -14,7 +14,6 @@ x//-----------------------------------------------------------------------------
 // Chip Select Pin for SPI
 //#define CS_PIN 51
 #define CS_PIN 4
-#define INT_PIN 51
 #define WHO_AM_I_VAL 0xC7
 
 #define DEBOUNCE_COUNT 25
@@ -179,12 +178,12 @@ class FXOS8700CQ {
 				} SRAWDATA;
 
        typedef struct {
-            int16_t avgX=0;
-            int16_t avgY=0;
-            int16_t avgZ=0;
-            int16_t stdX=0;
-            int16_t stdY=0;
-            int16_t stdZ=0;
+            int16_t avgX = 0;
+            int16_t avgY = 0;
+            int16_t avgZ = 0;
+            int16_t stdX = 0;
+            int16_t stdY = 0;
+            int16_t stdZ = 0;
        } CALDATA;
 
        typedef struct {
